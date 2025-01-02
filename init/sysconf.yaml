@@ -1,0 +1,12 @@
+inputs:
+  nixpkgs: github:nixos/nixpkgs/nixos-unstable
+
+hosts:
+  # hostname:
+  #  stateversion: 24.05
+  #  system: x86_64-linux
+
+users:
+  # username:
+  #  home-manager: true
+  #  stateversion: 24.05

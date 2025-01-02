@@ -1,0 +1,16 @@
+inputs:
+  nixpkgs: github:nixos/nixpkgs/nixos-unstable
+
+hosts:
+  book:
+    stateversion: 24.05
+    system: x86_64-linux
+
+  ozpc:
+    stateversion: 24.05
+    system: x86_64-linux
+
+users:
+  oz:
+    home-manager: true
+    stateversion: 24.05
