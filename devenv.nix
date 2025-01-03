@@ -3,7 +3,7 @@
 {
   # https://devenv.sh/basics/
   #env.GREET = "devenv";
-  env.LIBCLANG_PATH = "${pkgs.libclang.lib}";
+  env.LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 
   # https://devenv.sh/packages/
   packages = [ pkgs.git pkgs.libclang.lib pkgs.openssl ];
