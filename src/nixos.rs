@@ -1,15 +1,11 @@
-// use super::config::Config;
-// use super::cppnix::Nix;
-// use super::errors::Error;
+pub struct Nix {}
 
-// use std::path::PathBuf;
-// use xdg::BaseDirectories;
+pub struct NixOS {}
 
-// const REQUIRED_FILES: [&str; 2] = ["sysconf.yaml", ".gitignore"];
-// const EXISTING_FILES: [&str; 1] = [".gitignore"];
+// pub fn build_nixos(nixos_config: NixConfig) -> Result<NixBuild, ThisError> {}
 
-// pub struct NixOS {
-//     pub config: Config,
-//     nix: Nix,
-//     sysconf_home: PathBuf,
-// }
+// pub fn activate_nixos(nixos_build: NixBuild) -> Result<(), ThisError> {}
+
+// pub fn rollback_nixos(nixos_build: NixBuild) -> Result<(), ThisError> {}
+
+// pub fn validate_nixos(nixos_config: NixConfig) -> Result<(), ThisError> {}

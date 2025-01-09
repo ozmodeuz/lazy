@@ -6,7 +6,7 @@ Create a default sysconf config and initialize it as a git repo.
 
 1. check for existing config
 2. if found warn user and require 'force' flag or something
-3. if not found, create folder and copy in the 'init' versions of sysconf.nix, sysconf.yaml, and .gitignore, then initialise the folder as a git repo
+3. if not found, create folder and copy in the 'init' versions of sysconf.nix, sysconf.toml, and .gitignore, then initialise the folder as a git repo
 
 ## add
 

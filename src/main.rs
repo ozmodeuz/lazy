@@ -1,11 +1,8 @@
 mod config;
 mod cppnix;
-mod errors;
-mod init;
 mod nixos;
 
 use clap::{Parser, Subcommand};
-use init::init;
 
 #[derive(Debug, Parser)]
 #[command(name = "sysconf")]
@@ -27,7 +24,7 @@ fn main() {
 
     match cli.command {
         Commands::Init => {
-            init();
+            println!("{:#?}", config::initialize());
         }
     }
 }

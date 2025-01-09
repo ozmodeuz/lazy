@@ -9,8 +9,8 @@ impl Nix {
             args: vec![
                 "--extra-experimental-features".to_string(),
                 "nix-command".to_string(),
-                "--extra-experimental-features".to_string(),
-                "flakes".to_string(),
+                // "--extra-experimental-features".to_string(),
+                // "flakes".to_string(),
                 "--option".to_string(),
                 "warn-dirty".to_string(),
                 "false".to_string(),

@@ -1,84 +1,77 @@
-use super::errors::Error;
+//TODO: Add anyhow contexts everywhere...
 
-use serde::Deserialize;
-use serde_yaml;
-use std::{collections::HashMap, fs, path::PathBuf};
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
+use toml;
 use xdg;
 
-#[derive(Debug, Deserialize)]
-pub struct Config {
-    inputs: Inputs,
+#[derive(Debug, Deserialize, Serialize)]
+struct Config {
     hosts: HashMap<String, Host>,
     users: HashMap<String, User>,
+    sources: HashMap<String, Source>,
 }
 
-#[derive(Debug, Deserialize)]
-struct Inputs {
-    nixpkgs: String,
-}
-
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct Host {
-    stateversion: String,
-    system: String,
+    platform: String,
+    verison: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct User {
     #[serde(rename = "home-manager")]
     home_manager: bool,
-    stateversion: String,
 }
 
-pub fn get_config_directory() -> Result<PathBuf, Error> {
-    match xdg::BaseDirectories::with_prefix("sysconf") {
-        Ok(base_dir) => {
-            let config_dir = base_dir.get_config_home();
-            if config_dir.is_dir() {
-                Ok(config_dir)
-            } else {
-                match fs::create_dir_all(&config_dir) {
-                    Ok(()) => Ok(config_dir),
-                    Err(error) => Err(Error::IOError(error)),
-                }
-            }
-        }
-        Err(error) => Err(Error::BaseDirectoriesError(error)),
-    }
+#[derive(Debug, Deserialize, Serialize)]
+struct Source {
+    #[serde(rename = "type")]
+    source_type: String,
+    url: String,
+    ref_: String,
+    commit: String,
 }
 
-pub fn get_config_file(path: PathBuf) -> Result<PathBuf, Error> {
-    let sysconf_file = path.join("sysconf.yaml");
-    if sysconf_file.is_file() {
-        Ok(sysconf_file)
-    } else {
-        match fs::copy("init/sysconf.yaml", &sysconf_file) {
-            Ok(..) => Ok(sysconf_file),
-            Err(error) => Err(Error::IOError(error)),
-        }
-    }
+// TODO: break this up into main.rs
+
+pub fn initialize() -> Result<()> {
+    let out_path = get_sysconf_directory()?;
+    create_default_config(&out_path)
 }
 
-pub fn parse_config_file(path: PathBuf) -> Result<Config, Error> {
-    match fs::read_to_string(path) {
-        Ok(yaml_string) => match serde_yaml::from_str::<Config>(&yaml_string) {
-            Ok(config) => Ok(config),
-            Err(error) => Err(Error::YamlError(error)),
-        },
-        Err(error) => Err(Error::IOError(error)),
-    }
+fn get_sysconf_directory() -> Result<PathBuf> {
+    let base_dir = xdg::BaseDirectories::with_prefix("sysconf")?;
+    let config_home = base_dir.get_config_home();
+    if !config_home.exists() && config_home.is_dir() {
+        fs::create_dir_all(&config_home)?
+    };
+    Ok(config_home)
 }
 
-// pub fn write_default_config(path: &PathBuf) -> Result<(), Error> {
-//     match fs::copy(DEFAULT_CONFIG_FILE, path) {
-//         Ok(..) => Ok(()),
-//         Err(error) => Err(Error::IOError(error)),
-//     }
-// }
+fn create_default_config(out_path: &Path) -> Result<()> {
+    // FIXME: Can't just be a template! Needs to build up from existing nix config.
+    let init_path = Path::new("init");
+    let sysconf_toml_name = "sysconf.toml";
+    fs::copy(
+        init_path.join(sysconf_toml_name),
+        &out_path.join(sysconf_toml_name),
+    )?;
+    let gitignore_name = ".gitignore";
+    fs::copy(
+        init_path.join(gitignore_name),
+        &out_path.join(gitignore_name),
+    )?;
+    Ok(())
+}
 
-// pub fn write_default_gitignore(path: &PathBuf) -> Result<(), Error> {
-//     match fs::copy(DEFAULT_GITIGNORE_FILE, path) {
-//         Ok(..) => Ok(()),
-//         Err(error) => Err(Error::IOError(error)),
-//     }
-// }
+fn parse_config(path: &Path) -> Result<Config> {
+    let config_string = fs::read_to_string(path)?;
+    let config = toml::from_str(&config_string)?;
+    Ok(config)
+}
