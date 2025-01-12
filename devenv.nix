@@ -6,7 +6,7 @@
   env.LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 
   # https://devenv.sh/packages/
-  packages = [ pkgs.git pkgs.jq pkgs.libclang.lib pkgs.openssl ];
+  packages = [ pkgs.clang pkgs.git pkgs.jq pkgs.libclang.lib pkgs.openssl ];
 
   # https://devenv.sh/languages/
   languages.rust = {
