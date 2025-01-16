@@ -1,0 +1,7 @@
+fn integer (int: a) => a + 0;
+fn increment (int: a) => a + integer(1);
+fn sum (int: a) => integer(a)
+
+fn make_os (config: config) {
+
+}
