@@ -1,4 +1,10 @@
-{ pkgs, lib, config, inputs, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  inputs,
+  ...
+}:
 
 {
   # https://devenv.sh/basics/
@@ -6,13 +12,26 @@
   env.LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 
   # https://devenv.sh/packages/
-  packages = [ pkgs.clang pkgs.git pkgs.jq pkgs.libclang.lib pkgs.openssl ];
+  packages = [
+    pkgs.clang
+    pkgs.git
+    pkgs.jq
+    pkgs.libclang.lib
+    pkgs.openssl
+  ];
 
   # https://devenv.sh/languages/
   languages.rust = {
     enable = true;
     channel = "stable";
-    components = [ "rustc" "cargo" "clippy" "llvm-tools" "rustfmt" "rust-analyzer" ];
+    components = [
+      "rustc"
+      "cargo"
+      "clippy"
+      "llvm-tools"
+      "rustfmt"
+      "rust-analyzer"
+    ];
   };
 
   # https://devenv.sh/processes/

@@ -1,4 +1,5 @@
 /target
+/example
 # Devenv
 .devenv*
 devenv.local.nix
