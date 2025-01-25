@@ -477,6 +477,7 @@ dependencies = [
  "anyhow",
  "clap",
  "dirs",
+ "either",
  "git2",
  "indexmap 1.9.3",
  "nixel",

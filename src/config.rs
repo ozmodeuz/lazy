@@ -41,12 +41,12 @@ struct Source {
 // TODO: break this up into main.rs
 
 pub fn initialize() -> Result<()> {
-    let out_path = get_sysconf_directory()?;
+    let out_path = get_lazy_directory()?;
     create_default_config(&out_path)
 }
 
-fn get_sysconf_directory() -> Result<PathBuf> {
-    let base_dir = xdg::BaseDirectories::with_prefix("sysconf")?;
+fn get_lazy_directory() -> Result<PathBuf> {
+    let base_dir = xdg::BaseDirectories::with_prefix("lazy")?;
     let config_home = base_dir.get_config_home();
     if !config_home.exists() && config_home.is_dir() {
         fs::create_dir_all(&config_home)?
@@ -57,10 +57,10 @@ fn get_sysconf_directory() -> Result<PathBuf> {
 fn create_default_config(out_path: &Path) -> Result<()> {
     // FIXME: Can't just be a template! Needs to build up from existing nix config.
     let init_path = Path::new("init");
-    let sysconf_toml_name = "sysconf.toml";
+    let lazy_toml_name = "lazy.toml";
     fs::copy(
-        init_path.join(sysconf_toml_name),
-        &out_path.join(sysconf_toml_name),
+        init_path.join(lazy_toml_name),
+        &out_path.join(lazy_toml_name),
     )?;
     let gitignore_name = ".gitignore";
     fs::copy(

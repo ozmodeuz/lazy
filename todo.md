@@ -2,6 +2,28 @@
 
 ## init
 
+lazy init
+lazy init /path/to/config
+lazy init --flake /path/to/flake
+
+if path provided {
+if is flake {
+check if is git repo; warn if not
+read + parse flake to create lazy.nix file;
+rename flake.nix to flake.old or something?
+} else is nixos config {
+if is in /etc {
+check if .config/nixos exists && copy config to .config/nixos
+}
+read nix channels env vars to create lazy.nix file;
+delete nix channel env vars?
+} else {
+warn bad config
+}
+} else {
+create blank lazy.nix file (based on nixos-stable)
+}
+
 Create a default sysconf config and initialize it as a git repo.
 
 1. check for existing config
