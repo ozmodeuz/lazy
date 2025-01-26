@@ -1,8 +1,8 @@
-mod cppnix;
 mod init;
-mod nixos;
 
+use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 #[command(name = "lazy")]
@@ -16,13 +16,19 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    Init,
+    Init {
+        path: Option<PathBuf>,
+    },
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Init => init(path),
+        Commands::Init {path} => {
+            init::import_nixos(path)?;
+            Ok(())
+        },
+        _ => Ok(()),
     }
 }

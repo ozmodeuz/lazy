@@ -1,5 +1,5 @@
-{ sources, ... }:
 {
+  sources = import sources.nix;
   hosts = {
     ozpc = {
       platform = "x86_64";
