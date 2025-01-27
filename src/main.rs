@@ -1,4 +1,6 @@
+mod config;
 mod init;
+mod nix;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -16,19 +18,17 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    Init {
-        path: Option<PathBuf>,
-    },
+    Init { path: Option<PathBuf> },
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Init {path} => {
-            init::import_nixos(path)?;
+        Commands::Init { path } => {
+            init::import_test(path)?;
             Ok(())
-        },
+        }
         _ => Ok(()),
     }
 }
