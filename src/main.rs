@@ -1,5 +1,4 @@
 mod config;
-mod init;
 mod nix;
 
 use anyhow::Result;
@@ -26,7 +25,7 @@ fn main() -> Result<()> {
 
     match cli.command {
         Commands::Init { path } => {
-            init::import_test(path)?;
+            config::import_test(path)?;
             Ok(())
         }
         _ => Ok(()),

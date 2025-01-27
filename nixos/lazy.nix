@@ -8,7 +8,10 @@
         ./nixos/hosts/ozpc
         ./nixos/shared
       ];
-      allowUnfree = true;
     };
+  };
+  lazy = {
+    allowUnfree = true;
+    allowModifications = true;
   };
 }
