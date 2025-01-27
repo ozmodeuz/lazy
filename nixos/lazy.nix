@@ -10,8 +10,8 @@
       ];
     };
   };
-  lazy = {
-    allowUnfree = true;
+  settings = {
     allowModifications = true;
+    allowUnfree = true;
   };
 }

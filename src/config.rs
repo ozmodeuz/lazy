@@ -1,6 +1,7 @@
-use crate::nix::evaluate;
+use crate::nix::evaluate_attr;
 
 use anyhow::Result;
+use either::{Left, Right};
 use git2::{Direction, Remote};
 use hostname;
 use std::collections::HashMap;
@@ -12,23 +13,13 @@ use url::Url;
 struct Config {
     sources: Sources,
     hosts: Hosts,
-    settings: Option<Settings>,
-}
-
-impl Config {
-    fn new(sources: Sources, hosts: Hosts, settings: Option<Settings>) -> Self {
-        Self {
-            sources,
-            hosts,
-            settings,
-        }
-    }
+    settings: Settings,
 }
 
 #[derive(Debug)]
 struct Settings {
-    allow_modifications: Option<bool>,
-    allow_unfree: Option<bool>,
+    allow_modifications: bool,
+    allow_unfree: bool,
 }
 
 #[derive(Debug)]
@@ -39,25 +30,9 @@ struct Sources {
 #[derive(Debug)]
 struct Source {
     url: Url,
-    reference: Option<String>,
-    commit: Option<String>,
-    tarball: Option<String>,
-}
-
-impl Source {
-    fn new(
-        url: Url,
-        reference: Option<String>,
-        commit: Option<String>,
-        tarball: Option<String>,
-    ) -> Self {
-        Self {
-            url,
-            reference,
-            commit,
-            tarball,
-        }
-    }
+    reference: String,
+    commit: String,
+    tarball: String,
 }
 
 #[derive(Debug)]
@@ -69,40 +44,14 @@ struct Hosts {
 struct Host {
     architecture: Architecture,
     state_version: String,
-    modules: Option<Vec<Module>>,
-    allow_unfree: Option<bool>,
-}
-
-impl Host {
-    fn new(
-        architecture: Architecture,
-        state_version: String,
-        modules: Option<Vec<Module>>,
-        allow_unfree: Option<bool>,
-    ) -> Self {
-        Self {
-            architecture,
-            state_version,
-            modules,
-            allow_unfree,
-        }
-    }
+    modules: Vec<Module>,
+    allow_unfree: bool,
 }
 
 #[derive(Debug)]
 enum Architecture {
     X86_64,
     Aarch64,
-}
-
-impl Architecture {
-    fn get() -> Result<Architecture> {
-        match std::env::consts::ARCH {
-            "x86_64" => Ok(Architecture::X86_64),
-            "aarch64" => Ok(Architecture::Aarch64),
-            _ => Err(anyhow::anyhow!("Unsupported architecture")),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -117,43 +66,32 @@ struct Flake {
 
 struct FlakeInput {
     url: Url,
-    flake: Option<bool>,
+    flake: bool,
     inputs: HashMap<String, FlakeInput>,
-    follows: Option<String>,
+    follows: String,
 }
 
 struct NixOS {
     hostname: String,
     architecture: Architecture,
-    modules: Option<Vec<Module>>,
-    nixpkgs: Option<String>,
+    modules: Vec<Module>,
+    nixpkgs: Source,
     state_version: String,
 }
 
-impl NixOS {
-    fn new(
-        hostname: String,
-        architecture: Architecture,
-        modules: Option<Vec<Module>>,
-        nixpkgs: Option<String>,
-        state_version: String,
-    ) -> Self {
-        Self {
-            hostname,
-            architecture,
-            nixpkgs,
-            modules,
-            state_version,
-        }
-    }
-}
-
-pub fn import_test(path: Option<PathBuf>) -> Result<()> {
+pub fn init_test(path: Option<PathBuf>) -> Result<()> {
     let path = get_nixos_config_path(path)?;
     let nixos = import_nixos(path)?;
-    let config = init_from_nixos(nixos)?;
-    println!("{:#?}", config);
+    init_from_nixos(nixos)?;
     Ok(())
+}
+
+fn get_architecture() -> Result<Architecture> {
+    match std::env::consts::ARCH {
+        "x86_64" => Ok(Architecture::X86_64),
+        "aarch64" => Ok(Architecture::Aarch64),
+        _ => Err(anyhow::anyhow!("Unsupported architecture")),
+    }
 }
 
 fn get_nixos_config_path(path: Option<PathBuf>) -> Result<PathBuf> {
@@ -170,50 +108,73 @@ fn get_nixos_config_path(path: Option<PathBuf>) -> Result<PathBuf> {
 fn import_nixos(path: PathBuf) -> Result<NixOS> {
     let hostname = hostname::get()?.to_string_lossy().into_owned();
     let state_version = get_state_version(&path)?;
-    let architecture = Architecture::get()?;
-    Ok(NixOS::new(
+    let architecture = get_architecture()?;
+    let nixpkgs = get_latest_nixpkgs()?;
+    Ok(NixOS {
         hostname,
         architecture,
-        None,
-        None,
+        modules: Vec::new(),
+        nixpkgs,
         state_version,
-    ))
+    })
 }
 
+// fn import_lazy_config(path: PathBuf) -> Result<Config> {
+//     let string = fs::read_to_string(path)?
+// }
+
 fn get_state_version(path: &PathBuf) -> Result<String> {
-    let input: &str = path.to_str().unwrap_or("Invalid path");
     let args = vec![("config", "{}"), ("pkgs", "{}")];
-    let value = evaluate(input, Some("system.stateVersion"), Some(&args))?;
-    let string = value
-        .chars()
-        .filter(|c| c.is_numeric() || *c == '.')
-        .collect::<String>();
-    Ok(string)
+    let attr = "system.stateVersion";
+    let string = evaluate_attr(Right(&path), &attr, Some(&args))?;
+    let json: serde_json::Value = serde_json::from_str(&string)?;
+    Ok(json.to_string().trim_matches('"').to_string())
 }
 
 fn get_latest_nixpkgs() -> Result<Source> {
     let url = Url::parse("https://github.com/NixOS/nixpkgs")?;
     let reference = String::from("nixos-24.11");
     let commit = get_latest_git_commit(&url, &reference)?;
-    Ok(Source::new(url, Some(reference), Some(commit), None))
+    Ok(Source {
+        url,
+        reference,
+        commit,
+        tarball: String::new(),
+    })
 }
 
 fn init_from_nixos(nixos: NixOS) -> Result<()> {
-    let nixpkgs = get_latest_nixpkgs()?;
-    let mut sources_map = HashMap::new();
-    sources_map.insert(String::from("nixpkgs"), nixpkgs);
-    let sources = Sources {
-        sources: sources_map,
+    let host = Host {
+        architecture: nixos.architecture,
+        state_version: nixos.state_version,
+        modules: Vec::new(),
+        allow_unfree: false,
     };
-    let host = Host::new(nixos.architecture, nixos.state_version, None, None);
     let mut hosts_map = HashMap::new();
     hosts_map.insert(nixos.hostname, host);
     let hosts = Hosts { hosts: hosts_map };
-    let config = Config::new(sources, hosts, None);
+    let mut sources_map = HashMap::new();
+    sources_map.insert(String::from("nixpkgs"), nixos.nixpkgs);
+    let sources = Sources {
+        sources: sources_map,
+    };
+    let settings = Settings {
+        allow_modifications: false,
+        allow_unfree: false,
+    };
+    let config = Config {
+        sources,
+        hosts,
+        settings,
+    };
     let nixos_config_path = create_nixos_dir()?;
     let lazy_nix_string = config_to_nix(config)?;
     let lazy_file_path = nixos_config_path.join("lazy.nix");
     fs::write(lazy_file_path, lazy_nix_string)?;
+    Ok(())
+}
+
+fn init_from_existing(config: Config) -> Result<()> {
     Ok(())
 }
 
@@ -229,13 +190,10 @@ fn config_to_nix(config: Config) -> Result<String> {
       ref = \"{}\";
       commit = \"{}\";
     }};\n",
-            name,
-            source.url,
-            source.reference.as_deref().unwrap_or("main"),
-            source.commit.as_deref().unwrap_or(""),
+            name, source.url, source.reference, source.commit,
         ));
     }
-    output.push_str("  };\n\n");
+    output.push_str("  };\n");
 
     output.push_str("  hosts = {\n");
     for (name, host) in &config.hosts.hosts {
@@ -243,7 +201,7 @@ fn config_to_nix(config: Config) -> Result<String> {
             "    {} = {{
       architecture = \"{}\";
       modules = [];
-      stateVersion = \"{}\";{}
+      stateVersion = \"{}\";
     }};\n",
             name,
             match host.architecture {
@@ -251,8 +209,6 @@ fn config_to_nix(config: Config) -> Result<String> {
                 Architecture::Aarch64 => "aarch64",
             },
             host.state_version,
-            host.allow_unfree
-                .map_or(String::new(), |b| format!("\nallowUnfree = {}", b))
         ));
     }
     output.push_str("  };\n");

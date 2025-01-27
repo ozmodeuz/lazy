@@ -1,10 +1,4 @@
-{
-  pkgs,
-  lib,
-  config,
-  inputs,
-  ...
-}:
+{ pkgs, lib, config, inputs, ... }:
 
 {
   # https://devenv.sh/basics/
@@ -17,6 +11,7 @@
     pkgs.git
     pkgs.jq
     pkgs.libclang.lib
+    pkgs.nixfmt-rfc-style
     pkgs.openssl
   ];
 
@@ -24,14 +19,8 @@
   languages.rust = {
     enable = true;
     channel = "stable";
-    components = [
-      "rustc"
-      "cargo"
-      "clippy"
-      "llvm-tools"
-      "rustfmt"
-      "rust-analyzer"
-    ];
+    components =
+      [ "rustc" "cargo" "clippy" "llvm-tools" "rustfmt" "rust-analyzer" ];
   };
 
   # https://devenv.sh/processes/

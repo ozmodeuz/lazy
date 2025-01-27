@@ -25,7 +25,7 @@ fn main() -> Result<()> {
 
     match cli.command {
         Commands::Init { path } => {
-            config::import_test(path)?;
+            config::init_test(path)?;
             Ok(())
         }
         _ => Ok(()),
